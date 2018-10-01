@@ -4,8 +4,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import ru.bigcheese.flscanner.config.Selector;
-import ru.bigcheese.flscanner.config.Settings;
-import ru.bigcheese.flscanner.config.SiteConfig;
+import ru.bigcheese.flscanner.config.SettingsOld;
+import ru.bigcheese.flscanner.config.SiteConfigOld;
 import ru.bigcheese.flscanner.config.SysProps;
 import ru.bigcheese.flscanner.model.Post;
 
@@ -19,7 +19,7 @@ import java.util.*;
  */
 public class ParseTask implements Runnable {
 
-    private final SiteConfig config;
+    private final SiteConfigOld config;
     private final PropertyChangeSupport pcs;
     private long currTimestamp;
 
@@ -33,9 +33,9 @@ public class ParseTask implements Runnable {
         }
     };
 
-    public ParseTask(SiteConfig config) {
+    public ParseTask(SiteConfigOld config) {
         this.config = config;
-        this.pcs = new PropertyChangeSupport(Settings.ALL_POSTS);
+        this.pcs = new PropertyChangeSupport(SettingsOld.ALL_POSTS);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class ParseTask implements Runnable {
             List<Post> posts = new ArrayList<>();
             String page = config.getBasePage();
             Selector selector = config.getSelector();
-            currTimestamp = Settings.TIMESTAMPS.get(config.getName());
+            currTimestamp = SettingsOld.TIMESTAMPS.get(config.getName());
             boolean next = true;
 
             for (int i = 1; next; i++) {
@@ -78,9 +78,9 @@ public class ParseTask implements Runnable {
 
             List<Post> filtered = filterPosts(posts);
             if (filtered.size() > 0) {
-                pcs.firePropertyChange(config.getName(), Settings.ALL_POSTS.get(config.getName()), filtered);
+                pcs.firePropertyChange(config.getName(), SettingsOld.ALL_POSTS.get(config.getName()), filtered);
             }
-            Settings.ALL_POSTS.put(config.getName(), filtered);
+            SettingsOld.ALL_POSTS.put(config.getName(), filtered);
             updateTimestamp(posts);
             System.out.println(getConsoleMessage(filtered));
 
@@ -107,7 +107,7 @@ public class ParseTask implements Runnable {
 
     private List<Post> filterPosts(List<Post> posts) {
         String keywordPattern = getPattern(SysProps.getInstance().getKeywords());
-        Set<String> ignored = Settings.IGNORED_POSTS.get(config.getName());
+        Set<String> ignored = SettingsOld.IGNORED_POSTS.get(config.getName());
         int maxPosts = SysProps.getInstance().getMaxPosts() + 1;
         List<Post> filtered = new ArrayList<>();
         for (int i = 0; i < posts.size() && i < maxPosts; i++) {
@@ -125,7 +125,7 @@ public class ParseTask implements Runnable {
         if (posts.isEmpty()) return;
         Post max = Collections.max(posts, timeComparator);
         if (max.getTimestamp() > 0) {
-            Settings.TIMESTAMPS.put(config.getName(), max.getTimestamp());
+            SettingsOld.TIMESTAMPS.put(config.getName(), max.getTimestamp());
         }
     }
 

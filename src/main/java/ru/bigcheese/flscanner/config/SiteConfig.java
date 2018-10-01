@@ -1,167 +1,99 @@
 package ru.bigcheese.flscanner.config;
 
-import ru.bigcheese.flscanner.support.DateParser;
-import ru.bigcheese.flscanner.support.PreFilterAction;
-import ru.bigcheese.flscanner.support.ValueExtractor;
+import ru.bigcheese.flscanner.model.enums.TimeConverterType;
+import ru.bigcheese.flscanner.model.enums.TimeParserType;
+import ru.bigcheese.flscanner.model.enums.DescriptionParserType;
 
-/**
- * Содержит все конфигурационные параметры для парсинга сайта.
- * Этот класс является <tt>immutable</tt>, для создания экземпляров используется
- * шаблон проектирования <tt>Builder</tt>.
- *
- * @see     ru.bigcheese.flscanner.config.Selector
- * @see     ru.bigcheese.flscanner.support.ValueExtractor
- * @see     ru.bigcheese.flscanner.support.DateParser
- * @see     ru.bigcheese.flscanner.support.PreFilterAction
- * @author  BigCheese
- */
-public class SiteConfig {
+import ru.bigcheese.flscanner.model.Selector;
 
-    private final String name;
-    private final String baseUrl;
-    private final String page;
-    private final String pageSuffix;
-    private final Selector selector;
-    private final ValueExtractor descrExtractor;
-    private final ValueExtractor timeExtractor;
-    private final DateParser dateParser;
-    private final PreFilterAction preFilter;
+import java.io.Serializable;
 
-    private SiteConfig(Builder builder) {
-        this.name = builder.name;
-        this.baseUrl = builder.baseUrl;
-        this.page = builder.page;
-        this.pageSuffix = builder.pageSuffix;
-        this.selector = builder.selector;
-        this.timeExtractor = builder.timeExtractor;
-        this.descrExtractor = builder.descrExtractor;
-        this.dateParser = builder.dateParser;
-        this.preFilter = builder.preFilter;
-    }
+public class SiteConfig implements Serializable {
 
-    /**
-     * Название сайта
-     */
+    private String name;
+    private String baseUrl;
+    private String page;
+    private String pageSuffix;
+    private Selector selector;
+    private DescriptionParserType descriptionParserType;
+    private TimeParserType timeParserType;
+    private TimeConverterType timeConverterType;
+
     public String getName() {
         return name;
     }
 
-    /**
-     * Базовый URL сайта
-     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getBaseUrl() {
         return baseUrl;
     }
 
-    /**
-     * Путь к странице с фрилансом относительно base URL
-     */
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
     public String getPage() {
         return page;
     }
 
-    /**
-     * Шаблон для перехода на следующую страницу
-     */
+    public void setPage(String page) {
+        this.page = page;
+    }
+
     public String getPageSuffix() {
         return pageSuffix;
     }
 
-    /**
-     * Информация для парсинга
-     */
+    public void setPageSuffix(String pageSuffix) {
+        this.pageSuffix = pageSuffix;
+    }
+
     public Selector getSelector() {
         return selector;
     }
 
-    /**
-     * Метод извлечения описания поста
-     */
-    public ValueExtractor getDescrExtractor() {
-        return descrExtractor;
+    public void setSelector(Selector selector) {
+        this.selector = selector;
     }
 
-    /**
-     * Метод извлечения времени поста
-     */
-    public ValueExtractor getTimeExtractor() {
-        return timeExtractor;
+    public DescriptionParserType getDescriptionParserType() {
+        return descriptionParserType;
     }
 
-    /**
-     * Метод извлечения unix-timestamp времени по его строковому представлению на сайте
-     */
-    public DateParser getDateParser() {
-        return dateParser;
+    public void setDescriptionParserType(DescriptionParserType descriptionParserType) {
+        this.descriptionParserType = descriptionParserType;
     }
 
-    /**
-     * Предварительный фильтр постов (если используется на сайте)
-     */
-    public PreFilterAction getPreFilter() {
-        return preFilter;
+    public TimeParserType getTimeParserType() {
+        return timeParserType;
     }
 
-    /**
-     * Полный путь к начальной странице с фрилансом
-     */
-    public String getBasePage() {
-        return baseUrl + page;
+    public void setTimeParserType(TimeParserType timeParserType) {
+        this.timeParserType = timeParserType;
     }
 
-    /**
-     * Build instance of class <code>SiteConfig</code>
-     */
-    public static class Builder {
-        private String name;
-        private String baseUrl;
-        private String page;
-        private String pageSuffix;
-        private Selector selector;
-        private ValueExtractor descrExtractor;
-        private ValueExtractor timeExtractor;
-        private DateParser dateParser;
-        private PreFilterAction preFilter;
+    public TimeConverterType getTimeConverterType() {
+        return timeConverterType;
+    }
 
-        Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-        Builder baseUrl(String url) {
-            this.baseUrl = url;
-            return this;
-        }
-        Builder page(String page) {
-            this.page = page;
-            return this;
-        }
-        Builder pageSuffix(String suffix) {
-            this.pageSuffix = suffix;
-            return this;
-        }
-        Builder selector(Selector selector) {
-            this.selector = selector;
-            return this;
-        }
-        Builder descrExtractor(ValueExtractor extractor) {
-            this.descrExtractor = extractor;
-            return this;
-        }
-        Builder timeExtractor(ValueExtractor extractor) {
-            this.timeExtractor = extractor;
-            return this;
-        }
-        Builder dateParser(DateParser parser) {
-            this.dateParser = parser;
-            return this;
-        }
-        Builder preFilter(PreFilterAction preFilter) {
-            this.preFilter = preFilter;
-            return this;
-        }
+    public void setTimeConverterType(TimeConverterType timeConverterType) {
+        this.timeConverterType = timeConverterType;
+    }
 
-        SiteConfig build() {
-            return new SiteConfig(this);
-        }
+    @Override
+    public String toString() {
+        return "SiteConfig{" +
+                "name='" + name + '\'' +
+                ", baseUrl='" + baseUrl + '\'' +
+                ", page='" + page + '\'' +
+                ", pageSuffix='" + pageSuffix + '\'' +
+                ", selector=" + selector +
+                ", descriptionParserType=" + descriptionParserType +
+                ", timeParserType=" + timeParserType +
+                ", timeConverterType=" + timeConverterType +
+                '}';
     }
 }

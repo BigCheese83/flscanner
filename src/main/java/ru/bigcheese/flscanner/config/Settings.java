@@ -1,182 +1,93 @@
 package ru.bigcheese.flscanner.config;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import ru.bigcheese.flscanner.model.Post;
-import ru.bigcheese.flscanner.support.DateParserHelper;
-import ru.bigcheese.flscanner.support.PreFilterActionHelper;
-import ru.bigcheese.flscanner.support.ValueExtractorHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import ru.bigcheese.flscanner.model.AppProps;
 
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-/**
- * Created by BigCheese on 03.06.16.
- */
 public class Settings {
 
-    public static final Map<String, List<Post>> ALL_POSTS = new ConcurrentHashMap<>();
-    public static final Map<String, Set<String>> IGNORED_POSTS = new ConcurrentHashMap<>();
-    public static final Map<String, Long> TIMESTAMPS = new ConcurrentHashMap<>();
-    private static final SiteConfig[] SITE_CONFIGS;
-    private static final String JSON_NAME = "settings.json";
-    private static final long DEFAULT_TIMESTAMP = getTime20DaysAgo();
+    private static final Settings instance = new Settings();
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private List<SiteConfig> configs = new ArrayList<>();
+    private AppProps appProps = new AppProps();
 
     static {
-        SITE_CONFIGS = initSiteConfigs();
-        for (SiteConfig config : SITE_CONFIGS) {
-            ALL_POSTS.put(config.getName(), new ArrayList<Post>());
-            IGNORED_POSTS.put(config.getName(), new HashSet<String>());
-            TIMESTAMPS.put(config.getName(), DEFAULT_TIMESTAMP);
-        }
-        readSettings();
+        mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
 
-    @SuppressWarnings("unchecked")
-    public static void saveSettings() {
-        SysProps props = SysProps.getInstance();
-        JSONObject obj = new JSONObject();
-        obj.put("timeout", props.getTimeout());
-        obj.put("pullInterval", props.getPullInterval());
-        obj.put("maxPosts", props.getMaxPosts());
-        JSONArray keywords = new JSONArray();
-        Collections.addAll(keywords, props.getKeywords());
-        obj.put("keywords", keywords);
-        JSONObject timestamps = new JSONObject();
-        for (Map.Entry<String, Long> entry : TIMESTAMPS.entrySet()) {
-            timestamps.put(entry.getKey(), entry.getValue());
-        }
-        obj.put("timestamps", timestamps);
-        JSONArray ignored = new JSONArray();
-        ignored.addAll(props.getIgnored());
-        obj.put("ignored", ignored);
+    private Settings() {
+    }
 
-        // write json to file
-        try (FileWriter fileWriter = new FileWriter(JSON_NAME)) {
-            fileWriter.write(obj.toJSONString());
-            fileWriter.flush();
+    public static Settings getInstance() {
+        return instance;
+    }
+
+    public synchronized void initSettings() {
+        readSiteConfigs("sites.json");
+        readAppProps("settings.json");
+    }
+
+    public synchronized void saveSettings(AppProps props) {
+        appProps = new AppProps(props);
+        try {
+            mapper.writeValue(new File("settings.json"), appProps);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static void readSettings() {
-        SysProps props = SysProps.getInstance();
-        try (FileReader reader = new FileReader(JSON_NAME)) {
-            JSONObject obj = (JSONObject) new JSONParser().parse(reader);
-            Long timeout = (Long) obj.get("timeout");
-            if (timeout != null) {
-                props.setTimeout(timeout.intValue());
+    public AppProps getAppProps() {
+        return new AppProps(appProps);
+    }
+
+    public List<SiteConfig> getSiteConfigs() {
+        final Set<String> ignored = appProps.getIgnored();
+        return Collections.unmodifiableList(configs
+                .stream()
+                .filter(e -> !ignored.contains(e.getName()))
+                .collect(Collectors.toList()));
+    }
+
+    public List<SiteConfig> getAllSiteConfigs() {
+        return Collections.unmodifiableList(configs);
+    }
+
+    private void readSiteConfigs(String fileName) {
+        Path sitesPath = Paths.get(fileName);
+        if (Files.exists(sitesPath)) {
+            try {
+                byte[] jsonData = Files.readAllBytes(sitesPath);
+                configs = mapper.readValue(jsonData, new TypeReference<List<SiteConfig>>() {});
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            Long pullInterval = (Long) obj.get("pullInterval");
-            if (pullInterval != null) {
-                props.setPullInterval(pullInterval.intValue());
+        }
+    }
+
+    private void readAppProps(String fileName) {
+        Path settingsPath = Paths.get(fileName);
+        try {
+            if (Files.exists(settingsPath)) {
+                byte[] jsonData = Files.readAllBytes(settingsPath);
+                appProps = mapper.readValue(jsonData, AppProps.class);
+            } else {
+                mapper.writeValue(new File(fileName), appProps);
             }
-            Long maxPosts = (Long) obj.get("maxPosts");
-            if (maxPosts != null) {
-                props.setMaxPosts(maxPosts.intValue());
-            }
-            JSONArray keywords = (JSONArray) obj.get("keywords");
-            if (keywords != null) {
-                String[] words = new String[keywords.size()];
-                System.arraycopy(keywords.toArray(), 0, words, 0, keywords.size());
-                props.setKeywords(words);
-            }
-            JSONObject timestamps = (JSONObject) obj.get("timestamps");
-            if (timestamps != null) {
-                for (Object entry : timestamps.entrySet()) {
-                    Map.Entry<String, Long> e = (Map.Entry<String, Long>) entry;
-                    TIMESTAMPS.put(e.getKey(), e.getValue());
-                }
-            }
-            JSONArray ignored = (JSONArray) obj.get("ignored");
-            if (ignored != null) {
-                props.setIgnored(new HashSet<String>(ignored));
-            }
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public static List<SiteConfig> getConfigs() {
-        Set<String> ignored = SysProps.getInstance().getIgnored();
-        List<SiteConfig> configs = new ArrayList<>();
-        for (SiteConfig sc : SITE_CONFIGS) {
-            if (!ignored.contains(sc.getName())) {
-                configs.add(sc);
-            }
-        }
-        return configs;
-    }
-
-    public static SiteConfig[] getAllConfigs() {
-        return Arrays.copyOf(SITE_CONFIGS, SITE_CONFIGS.length);
-    }
-
-    private static SiteConfig[] initSiteConfigs() {
-
-        return new SiteConfig[] {
-
-                new SiteConfig.Builder()
-                        .name("programmersforum.ru")
-                        .baseUrl("http://programmersforum.ru/")
-                        .page("forumdisplay.php?f=29")
-                        .pageSuffix("&order=desc&page={0}")
-                        .selector(new Selector.Builder()
-                                .rows("#threadslist #threadbits_forum_29 tr")
-                                .link("a[id^='thread_title_']")
-                                .descr("td[id^='td_threadtitle_']")
-                                .time("span.time")
-                                .build())
-                        .descrExtractor(ValueExtractorHelper.DESCR_ATTR_TITLE)
-                        .timeExtractor(ValueExtractorHelper.TIME_STR_SPAN_TIME_PARENT)
-                        .dateParser(DateParserHelper.CYBERFORUM_PARSER)
-                        .build(),
-
-                new SiteConfig.Builder()
-                        .name("www.fl.ru")
-                        .baseUrl("https://www.fl.ru")
-                        .page("/projects")
-                        .pageSuffix("/?page={0}&kind=5")
-                        .selector(new Selector.Builder()
-                                .rows("#projects-list div[id^='project-item']")
-                                .link("a[id^='prj_name_']")
-                                .descr("script:eq(2)")
-                                .time("div.b-post__foot script")
-                                .build())
-                        .descrExtractor(ValueExtractorHelper.DESCR_FL_RU)
-                        .timeExtractor(ValueExtractorHelper.TIME_STR_FL_RU)
-                        .dateParser(DateParserHelper.FL_PARSER)
-                        .preFilter(PreFilterActionHelper.FL_PRE_FILTER)
-                        .build(),
-
-                new SiteConfig.Builder()
-                        .name("freelansim.ru")
-                        .baseUrl("http://freelansim.ru")
-                        .page("/tasks")
-                        .pageSuffix("?page={0}")
-                        .selector(new Selector.Builder()
-                                .rows("#tasks_list header.task__header")
-                                .link("div.task__title a")
-                                .descr("div.task__title")
-                                .time("div.task__params span.params__published-at")
-                                .build())
-                        .descrExtractor(ValueExtractorHelper.DESCR_ATTR_TITLE)
-                        .timeExtractor(ValueExtractorHelper.TIME_STR_COMMON)
-                        .dateParser(DateParserHelper.FL_PARSER)
-                        .build()
-        };
-    }
-
-    private static long getTime20DaysAgo() {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH, -20);
-        return cal.getTimeInMillis();
     }
 }

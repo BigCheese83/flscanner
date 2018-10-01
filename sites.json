@@ -1,0 +1,17 @@
+[
+  {
+    "name": "programmersforum.ru",
+    "baseUrl": "http://programmersforum.ru/",
+    "page": "forumdisplay.php?f=29",
+    "pageSuffix": "&order=desc&page={0}",
+    "selector": {
+      "rows": "#threadslist #threadbits_forum_29 tr",
+      "link": "a[id^='thread_title_']",
+      "description": "td[id^='td_threadtitle_']",
+      "time": "span.time"
+    },
+    "descriptionParserType": "ATTRIBUTE_TITLE",
+    "timeParserType": "SPAN_TIME_PARENT",
+    "timeConverterType": "PROGRAMMERSFORUM_RU"
+  }
+]

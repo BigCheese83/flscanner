@@ -1,7 +1,7 @@
 package ru.bigcheese.flscanner;
 
-import ru.bigcheese.flscanner.config.Settings;
-import ru.bigcheese.flscanner.config.SiteConfig;
+import ru.bigcheese.flscanner.config.SettingsOld;
+import ru.bigcheese.flscanner.config.SiteConfigOld;
 import ru.bigcheese.flscanner.config.SysProps;
 
 import java.beans.PropertyChangeListener;
@@ -76,7 +76,7 @@ public abstract class Runner {
 
     private static List<ParseTask> getTasks() {
         List<ParseTask> tasks = new ArrayList<>();
-        for (SiteConfig config : Settings.getConfigs()) {
+        for (SiteConfigOld config : SettingsOld.getConfigs()) {
             tasks.add(new ParseTask(config));
         }
         return tasks;

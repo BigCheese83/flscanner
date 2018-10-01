@@ -1,6 +1,6 @@
 package ru.bigcheese.flscanner.gui.listeners;
 
-import ru.bigcheese.flscanner.config.Settings;
+import ru.bigcheese.flscanner.config.SettingsOld;
 
 import javax.swing.*;
 import java.awt.event.ItemEvent;
@@ -19,7 +19,7 @@ public class CheckBoxIgnoreItemListener implements ItemListener {
     public CheckBoxIgnoreItemListener(JLabel label, String siteName, String postId) {
         this.label = label;
         this.postId = postId;
-        this.ignores = Settings.IGNORED_POSTS.get(siteName);
+        this.ignores = SettingsOld.IGNORED_POSTS.get(siteName);
     }
 
     @Override

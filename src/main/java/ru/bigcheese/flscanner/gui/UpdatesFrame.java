@@ -1,7 +1,7 @@
 package ru.bigcheese.flscanner.gui;
 
 import ru.bigcheese.flscanner.Runner;
-import ru.bigcheese.flscanner.config.Settings;
+import ru.bigcheese.flscanner.config.SettingsOld;
 import ru.bigcheese.flscanner.gui.listeners.CheckBoxIgnoreItemListener;
 import ru.bigcheese.flscanner.model.Post;
 
@@ -30,7 +30,7 @@ public class UpdatesFrame extends JFrame {
         Runner.addPropertyChangeListener(new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
-                if (Settings.ALL_POSTS.containsKey(evt.getPropertyName())) {
+                if (SettingsOld.ALL_POSTS.containsKey(evt.getPropertyName())) {
                     new SwingWorker<Object, Object>() {
                         @Override
                         protected Object doInBackground() throws Exception {
@@ -48,7 +48,7 @@ public class UpdatesFrame extends JFrame {
     }
 
     private void initUpdates() {
-        for (Map.Entry<String, List<Post>> entry : Settings.ALL_POSTS.entrySet()) {
+        for (Map.Entry<String, List<Post>> entry : SettingsOld.ALL_POSTS.entrySet()) {
             if (entry.getValue().size() > 0) {
                 updates.put(entry.getKey(), entry.getValue());
             }
