@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by BigCheese on 23.06.16.
  */
+@Deprecated
 public abstract class Runner {
 
     private final static List<ParseTask> tasks = getTasks();

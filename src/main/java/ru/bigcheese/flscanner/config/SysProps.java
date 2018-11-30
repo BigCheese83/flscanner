@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by BigCheese on 21.06.16.
  */
+@Deprecated
 public class SysProps {
 
     private static final SysProps INSTANCE = new SysProps();

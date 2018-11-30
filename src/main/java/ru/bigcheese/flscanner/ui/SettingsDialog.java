@@ -5,7 +5,17 @@ import ru.bigcheese.flscanner.config.Settings;
 import ru.bigcheese.flscanner.config.SiteConfig;
 import ru.bigcheese.flscanner.model.AppProps;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFormattedTextField;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import java.awt.event.ComponentAdapter;

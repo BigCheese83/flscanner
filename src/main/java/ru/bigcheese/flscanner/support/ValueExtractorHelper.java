@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
  * @see     ru.bigcheese.flscanner.support.ValueExtractor
  * @author  BigCheese
  */
+@Deprecated
 public class ValueExtractorHelper {
 
     public static final ValueExtractor DESCR_ATTR_TITLE = new ValueExtractor() {

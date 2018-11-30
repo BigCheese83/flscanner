@@ -1,6 +1,6 @@
 {
   "timeout" : 5000,
-  "pullInterval" : 600,
+  "pullInterval" : 10,
   "scanDaysOnStart" : 20,
   "maxPosts" : 1000,
   "keywords" : [ ],

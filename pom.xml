@@ -29,6 +29,23 @@
             <version>1.11.3</version>
         </dependency>
         <dependency>
+            <!-- Cross-platform SystemTray support for Swing/AWT, GtkStatusIcon, and AppIndicator on Java 6+ -->
+            <groupId>com.dorkbox</groupId>
+            <artifactId>SystemTray</artifactId>
+            <version>3.17</version>
+        </dependency>
+        <dependency>
+            <!-- Linux, MacOS, or Windows (notification/growl/toast/) popups for the desktop for Java 6+  -->
+            <groupId>com.dorkbox</groupId>
+            <artifactId>Notify</artifactId>
+            <version>3.7</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>

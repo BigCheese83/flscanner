@@ -1,4 +1,4 @@
-package ru.bigcheese.flscanner.gui;
+package ru.bigcheese.flscanner.ui;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,17 +9,14 @@ import java.util.LinkedHashMap;
 import java.util.ListIterator;
 import java.util.Map;
 
-/**
- * Created by BigCheese on 23.06.16.
- */
 public class UpdatesContentPanel extends JPanel implements ActionListener {
 
     private JPanel topPanel;                                    // contains the buttons displayed on the top
     private JPanel bottomPanel;                                 // contains the buttons displayed on the bottom
     private Map<String, BarInfo> bars = new LinkedHashMap<>();  // use to preserve the order of the bars
     private int visibleBar = 0;                                 // The currently visible bar (zero-based index)
-    private JComponent visibleComponent = null;                 // A place-holder for the currently visible component
-    private JLabel noBarsLabel = getNoBarsLabel();
+    private JComponent visibleComponent;                        // A placeholder for the currently visible component
+    private JLabel noBarsLabel = createNoBarsLabel();
 
     public UpdatesContentPanel() {
         setLayout(new BorderLayout());
@@ -30,14 +27,14 @@ public class UpdatesContentPanel extends JPanel implements ActionListener {
         add(noBarsLabel, BorderLayout.CENTER);
     }
 
-    public void addBar(String name, JComponent component, Integer count) {
+    public void addBar(String name, JComponent component, int count) {
         BarInfo barInfo = new BarInfo(name, component, count);
         barInfo.getButton().addActionListener(this);
         bars.put(name, barInfo);
         render();
     }
 
-    public void addBar(String name, Icon icon, JComponent component, Integer count) {
+    public void addBar(String name, Icon icon, JComponent component, int count) {
         BarInfo barInfo = new BarInfo(name, icon, component, count);
         barInfo.getButton().addActionListener(this);
         bars.put(name, barInfo);
@@ -54,14 +51,14 @@ public class UpdatesContentPanel extends JPanel implements ActionListener {
     }
 
     public void setVisibleBar(int visibleBar) {
-        if (visibleBar > 0 && visibleBar < bars.size()-1) {
+        if (visibleBar > 0 && visibleBar < bars.size() - 1) {
             this.visibleBar = visibleBar;
             render();
         }
     }
 
     /**
-     * Causes the  bar component to rebuild itself; this means that
+     * Causes the bar component to rebuild itself; this means that
      * it rebuilds the top and bottom panels of bars as well as making the
      * currently selected bar's panel visible
      */
@@ -77,20 +74,16 @@ public class UpdatesContentPanel extends JPanel implements ActionListener {
         int bottomBars = totalBars - topBars;
 
         // Get an iterator to walk through out bars with
-        //Iterator<String> iterator = bars.keySet().iterator();
-
-        ListIterator<String> iterator =
-                new ArrayList<>(bars.keySet()).listIterator(bars.size());
-
+        ListIterator<String> iterator = new ArrayList<>(bars.keySet()).listIterator(bars.size());
 
         // Render the top bars: remove all components, reset the GridLayout to
         // hold to correct number of bars, add the bars, and "validate" it to
         // cause it to re-layout its components
         topPanel.removeAll();
-        GridLayout topLayout = (GridLayout)topPanel.getLayout();
+        GridLayout topLayout = (GridLayout) topPanel.getLayout();
         topLayout.setRows(topBars);
         BarInfo barInfo = null;
-        for (int i=0; i < topBars; i++) {
+        for (int i = 0; i < topBars; i++) {
             barInfo = bars.get(iterator.previous());
             topPanel.add(barInfo.getButton());
         }
@@ -98,20 +91,21 @@ public class UpdatesContentPanel extends JPanel implements ActionListener {
 
         // Render the center component: remove the current component (if there
         // is one) and then put the visible component in the center of this panel
-        if (visibleComponent != null) {
-            remove(visibleComponent);
+        if (barInfo != null) {
+            if (visibleComponent != null) {
+                remove(visibleComponent);
+            }
+            visibleComponent = barInfo.getComponent();
+            add(visibleComponent, BorderLayout.CENTER);
         }
-        visibleComponent = barInfo.getComponent();
-        add(visibleComponent, BorderLayout.CENTER);
-
 
         // Render the bottom bars: remove all components, reset the GridLayout to
         // hold to correct number of bars, add the bars, and "validate" it to
         // cause it to re-layout its components
         bottomPanel.removeAll();
-        GridLayout bottomLayout = (GridLayout)bottomPanel.getLayout();
+        GridLayout bottomLayout = (GridLayout) bottomPanel.getLayout();
         bottomLayout.setRows(bottomBars);
-        for (int i=0; i < bottomBars; i++) {
+        for (int i = 0; i < bottomBars; i++) {
             barInfo = bars.get(iterator.previous());
             bottomPanel.add(barInfo.getButton());
         }
@@ -126,7 +120,7 @@ public class UpdatesContentPanel extends JPanel implements ActionListener {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-        int currentBar = bars.size()-1;
+        int currentBar = bars.size() - 1;
         for (Map.Entry<String, BarInfo> entry : bars.entrySet()) {
             if (entry.getValue().getButton() == e.getSource()) {
                 // Found the selected button
@@ -138,8 +132,8 @@ public class UpdatesContentPanel extends JPanel implements ActionListener {
         }
     }
 
-    private JLabel getNoBarsLabel() {
-        ImageIcon image = new ImageIcon(UpdatesFrame.class.getResource("/images/sad-smiley.png"));
+    private JLabel createNoBarsLabel() {
+        ImageIcon image = new ImageIcon(getClass().getResource("/images/sad-smiley.png"));
         JLabel label = new JLabel("No updates", image, JLabel.CENTER);
         label.setHorizontalTextPosition(JLabel.CENTER);
         label.setVerticalTextPosition(JLabel.TOP);
@@ -152,53 +146,49 @@ public class UpdatesContentPanel extends JPanel implements ActionListener {
      * Internal class that maintains information about individual bars;
      * specifically it maintains the following information:
      *
-     * name      The name of the bar
-     * button     The associated JButton for the bar
+     * name         The name of the bar
+     * button       The associated JButton for the bar
      * component    The component maintained in the bar
      */
     private static class BarInfo {
 
-        private String name;
-        private JButton button;
-        private JComponent component;
+        private final String name;
+        private final JButton button;
+        private final JComponent component;
         private final long timestamp;
 
-        public BarInfo(String name, JComponent component, Integer count) {
+        BarInfo(String name, JComponent component, int count) {
             this.name = name;
             this.component = component;
             this.button = new JButton(getButtonLabel(name, count));
             this.timestamp = System.currentTimeMillis();
         }
 
-        public BarInfo(String name, Icon icon, JComponent component, Integer count) {
+        BarInfo(String name, Icon icon, JComponent component, int count) {
             this.name = name;
             this.component = component;
             this.button = new JButton(getButtonLabel(name, count), icon);
             this.timestamp = System.currentTimeMillis();
         }
 
-        public String getName() {
+        String getName() {
             return name;
         }
 
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public JButton getButton() {
+        JButton getButton() {
             return button;
         }
 
-        public JComponent getComponent() {
+        JComponent getComponent() {
             return component;
         }
 
-        public long getTimestamp() {
+        long getTimestamp() {
             return timestamp;
         }
 
-        private String getButtonLabel(String name, Integer count) {
-            return count != null ? name + " (" + count + ")" : name;
+        private String getButtonLabel(String name, int count) {
+            return count > 0 ? name + " (" + count + ")" : name;
         }
     }
 }

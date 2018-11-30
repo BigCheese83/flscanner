@@ -1,13 +1,11 @@
 package ru.bigcheese.flscanner.model;
 
-import java.io.Serializable;
-
 /**
  * Инкапсулирует информацию для парсинга постов.
  *
  * @author  BigCheese
  */
-public class Selector implements Serializable {
+public class Selector {
 
     private String rows;
     private String link;
@@ -31,19 +29,11 @@ public class Selector implements Serializable {
         return rows;
     }
 
-    public void setRows(String rows) {
-        this.rows = rows;
-    }
-
     /**
      * Селектор для поиска ссылки
      */
     public String getLink() {
         return link;
-    }
-
-    public void setLink(String link) {
-        this.link = link;
     }
 
     /**
@@ -53,15 +43,23 @@ public class Selector implements Serializable {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     /**
      * Селектор для поиска времени поста
      */
     public String getTime() {
         return time;
+    }
+
+    public void setRows(String rows) {
+        this.rows = rows;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public void setTime(String time) {

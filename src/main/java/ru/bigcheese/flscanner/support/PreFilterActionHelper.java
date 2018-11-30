@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 /**
  * Created by BigCheese on 01.07.16.
  */
+@Deprecated
 public class PreFilterActionHelper {
 
     public static final PreFilterAction FL_PRE_FILTER = new FLPreFilterAction();

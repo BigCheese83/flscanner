@@ -15,6 +15,7 @@ import ru.bigcheese.flscanner.support.ValueExtractor;
  * @see     ru.bigcheese.flscanner.support.PreFilterAction
  * @author  BigCheese
  */
+@Deprecated
 public class SiteConfigOld {
 
     private final String name;

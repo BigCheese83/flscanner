@@ -1,12 +1,19 @@
 package ru.bigcheese.flscanner.task;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.bigcheese.flscanner.model.ParseResult;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 public class ParseExecutorTask implements Runnable {
+
+    private static final Logger log = LoggerFactory.getLogger(ParseExecutorTask.class);
 
     private final ExecutorService executorService;
     private final List<ParseTask> tasks;
@@ -21,12 +28,10 @@ public class ParseExecutorTask implements Runnable {
     @Override
     public void run() {
         CompletionService<ParseResult> ecs = new ExecutorCompletionService<>(executorService);
-        List<ParseTask> activeList = new ArrayList<>();
 
         for (ParseTask task : tasks) {
             Future<ParseResult> future = ecs.submit(task);
             parseTaskService.registerTask(task, future);
-            activeList.add(task);
         }
 
         for (int i = 0; i < tasks.size(); i++) {
@@ -34,13 +39,13 @@ public class ParseExecutorTask implements Runnable {
                 ParseResult result = ecs.take().get();
                 parseTaskService.processParseResult(result);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.warn("interrupted task", e);
             } catch (ExecutionException e) {
-                e.printStackTrace();
+                log.error("task error", e);
                 parseTaskService.fireErrorEvent(e.getCause());
             }
         }
 
-        parseTaskService.unregisterTasks(activeList);
+        parseTaskService.refreshStateTasks();
     }
 }

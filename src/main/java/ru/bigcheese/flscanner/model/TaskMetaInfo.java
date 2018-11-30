@@ -4,11 +4,16 @@ public class TaskMetaInfo {
 
     private final String name;
     private final boolean isScheduled;
-    private final long created = System.currentTimeMillis();
+    private final long created;
 
     public TaskMetaInfo(String name, boolean isScheduled) {
+        this(name, isScheduled, System.currentTimeMillis());
+    }
+
+    public TaskMetaInfo(String name, boolean isScheduled, long created) {
         this.name = name;
         this.isScheduled = isScheduled;
+        this.created = created;
     }
 
     public String getName() {

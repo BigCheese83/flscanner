@@ -4,6 +4,7 @@ package ru.bigcheese.flscanner.support;
  * Date parsing.
  * @author  BigCheese
  */
+@Deprecated
 public interface DateParser {
     /**
      * Парсинг времени по ее строковому представлению

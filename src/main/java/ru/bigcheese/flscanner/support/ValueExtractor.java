@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element;
  * Extract value.
  * @author  BigCheese
  */
+@Deprecated
 public interface ValueExtractor {
     /**
      * Извлекает строковое значение из html-элемента

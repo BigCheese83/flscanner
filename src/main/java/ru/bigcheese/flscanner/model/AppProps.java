@@ -1,10 +1,9 @@
 package ru.bigcheese.flscanner.model;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class AppProps implements Serializable {
+public class AppProps {
 
     private int timeout;
     private int pullInterval;

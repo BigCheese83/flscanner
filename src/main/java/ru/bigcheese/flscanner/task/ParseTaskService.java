@@ -3,37 +3,78 @@ package ru.bigcheese.flscanner.task;
 import ru.bigcheese.flscanner.config.Settings;
 import ru.bigcheese.flscanner.event.ParseTaskEvent;
 import ru.bigcheese.flscanner.event.ParseTaskEventListener;
-import ru.bigcheese.flscanner.event.ParseTaskEventType;
-import ru.bigcheese.flscanner.model.*;
-import ru.bigcheese.flscanner.util.CommonUtils;
+import ru.bigcheese.flscanner.model.AppProps;
+import ru.bigcheese.flscanner.model.ParseError;
+import ru.bigcheese.flscanner.model.ParseResult;
+import ru.bigcheese.flscanner.model.Post;
+import ru.bigcheese.flscanner.model.TaskMetaInfo;
+import ru.bigcheese.flscanner.tray.SystemTrayService;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static ru.bigcheese.flscanner.event.ParseTaskEventType.STOPPED_ALL;
-import static ru.bigcheese.flscanner.util.CommonUtils.*;
+import static java.util.Collections.unmodifiableMap;
+import static ru.bigcheese.flscanner.event.ParseTaskEventType.UPDATES_FOUND;
+import static ru.bigcheese.flscanner.event.ParseTaskEventType.ERROR;
+import static ru.bigcheese.flscanner.util.CommonUtils.getSystemTrayService;
+import static ru.bigcheese.flscanner.util.CommonUtils.getStacktrace;
 
 public class ParseTaskService {
 
     private static final ParseTaskService instance = new ParseTaskService();
 
+    private static final int SCHEDULED_POOL_SIZE = 3;
+    private static final int THREAD_POOL_MAX_SIZE = 100;
+
     private final Settings settings = Settings.getInstance();
     private final Map<String, List<Post>> posts = new ConcurrentHashMap<>();
     private final Map<String, Long> timeouts = new ConcurrentHashMap<>();
     private final Map<TaskMetaInfo, Future<ParseResult>> activeTasks = new ConcurrentHashMap<>();
+    private final Map<TaskMetaInfo, ScheduledFuture<?>> executorTasks = new ConcurrentHashMap<>();
+    private final List<ParseTaskEventListener> listeners = new CopyOnWriteArrayList<>();
 
-    private List<ParseTaskEventListener> listeners = new CopyOnWriteArrayList<>();
+    private final ExecutorService executorService;
+    private final ScheduledExecutorService scheduledService;
 
-
-    private ExecutorService executorService = Executors.newFixedThreadPool(settings.getAllSiteConfigs().size()*3);
-    private ScheduledExecutorService scheduledService = Executors.newScheduledThreadPool(3);
-
-    private ScheduledFuture<?> scheduledFuture;
-    private ScheduledFuture<?> scanOnceFuture;
-    private boolean isScheduledScan = false;
+    private volatile boolean isScheduledScan = false;
 
     private ParseTaskService() {
+        int poolSize = settings.getAllSiteConfigs().size() * SCHEDULED_POOL_SIZE;
+        if (poolSize > THREAD_POOL_MAX_SIZE) {
+            poolSize = THREAD_POOL_MAX_SIZE;
+        }
+        executorService = Executors.newFixedThreadPool(poolSize);
+        scheduledService = Executors.newScheduledThreadPool(SCHEDULED_POOL_SIZE);
+
+        addListener(event -> {
+            SystemTrayService trayService = getSystemTrayService();
+            switch (event.getType()) {
+                case UPDATES_FOUND:
+                    ParseResult parseResult = (ParseResult) event.getPayload();
+                    trayService.displayMessage(
+                            "Updates found for",
+                            parseResult.getMetaInfo().getName() + " (" + parseResult.getPosts().size() + ")",
+                            UPDATES_FOUND);
+                    break;
+                case ERROR:
+                    ParseError error = (ParseError) event.getPayload();
+                    trayService.displayMessage(
+                            "Error!",
+                            error.getException() + ": " + error.getMessage(),
+                            ERROR);
+                    break;
+            }
+        });
     }
 
     public static ParseTaskService getInstance() {
@@ -41,59 +82,48 @@ public class ParseTaskService {
     }
 
     public synchronized void scheduledScan() {
-        long start = System.currentTimeMillis();
         if (!isScheduledScan) {
-            ParseExecutorTask executorTask = new ParseExecutorTask(executorService, createTaskList(true), this);
-            scheduledService.scheduleAtFixedRate(
+            ParseExecutorTask executorTask = new ParseExecutorTask(
+                    executorService, createTaskList(true), this);
+            ScheduledFuture<?> future = scheduledService.scheduleAtFixedRate(
                     executorTask, 0, settings.getAppProps().getPullInterval(), TimeUnit.SECONDS);
+            String taskName = "Scheduled task " + System.currentTimeMillis();
+            executorTasks.put(new TaskMetaInfo(taskName, true), future);
             isScheduledScan = true;
         }
-        System.out.println("execution at " + (System.currentTimeMillis() - start) + " ms");
     }
 
     public synchronized void stopScan() {
-        long start = System.currentTimeMillis();
-
-        //scheduledFuture.cancel(true);
-        //scanOnceFuture.cancel(true);
-        activeTasks.forEach((k, v) -> v.cancel(true));
+        activeTasks.forEach((meta, future) -> future.cancel(true));
         activeTasks.clear();
-
+        executorTasks.forEach((meta, future) -> future.cancel(true));
+        executorTasks.clear();
         isScheduledScan = false;
-        fireEvent(new ParseTaskEvent(this, STOPPED_ALL));
-        System.out.println("execution at " + (System.currentTimeMillis() - start) + " ms");
     }
 
     public synchronized void scanOnce() {
-        ParseExecutorTask executorTask = new ParseExecutorTask(executorService, createTaskList(false), this);
-        scheduledService.schedule(executorTask, 0, TimeUnit.MILLISECONDS);
+        ParseExecutorTask executorTask = new ParseExecutorTask(
+                executorService, createTaskList(false), this);
+        ScheduledFuture<?> future = scheduledService.schedule(executorTask, 0, TimeUnit.MILLISECONDS);
+        String taskName = "Scan once task " + System.currentTimeMillis();
+        executorTasks.put(new TaskMetaInfo(taskName, false), future);
     }
 
-    public void registerTask(ParseTask task, Future<ParseResult> future) {
-        activeTasks.put(task.getMetaInfo(), future);
+    public synchronized void refreshStateTasks() {
+        activeTasks.forEach((meta, future) -> {
+            if (future.isDone() || future.isCancelled()) {
+                activeTasks.remove(meta);
+            }
+        });
+        executorTasks.forEach((meta, future) -> {
+            if (future.isDone() || future.isCancelled()) {
+                executorTasks.remove(meta);
+            }
+        });
     }
 
-    public void unregisterTasks(List<ParseTask> tasks) {
-        tasks.forEach(t -> activeTasks.remove(t.getMetaInfo()));
-    }
-
-    public void processParseResult(ParseResult result) {
-        String name = result.getMetaInfo().getName();
-        posts.putIfAbsent(name, new ArrayList<>());
-        posts.get(name).addAll(result.getPosts());
-        if (result.getTimestamp() > 0) {
-            timeouts.put(name, result.getTimestamp());
-        }
-        activeTasks.remove(result.getMetaInfo());
-    }
-
-    public void fireErrorEvent(Throwable e) {
-        ParseError error = new ParseError(e.getLocalizedMessage(), getStacktrace(e));
-        fireEvent(new ParseTaskEvent(this, ParseTaskEventType.ERROR, error));
-    }
-
-    public void printActiveTasks() {
-        System.out.println(activeTasks);
+    public Map<String, List<Post>> getAllPosts() {
+        return unmodifiableMap(posts);
     }
 
     public void addListener(ParseTaskEventListener listener) {
@@ -102,6 +132,33 @@ public class ParseTaskService {
 
     public void removeListener(ParseTaskEventListener listener) {
         listeners.remove(listener);
+    }
+
+    void registerTask(ParseTask task, Future<ParseResult> future) {
+        activeTasks.put(task.getMetaInfo(), future);
+    }
+
+    void processParseResult(ParseResult result) {
+        System.out.println(result); //TODO
+        String name = result.getMetaInfo().getName();
+        posts.putIfAbsent(name, new ArrayList<>());
+        posts.get(name).addAll(result.getPosts());
+        if (result.getTimestamp() > 0) {
+            timeouts.put(name, result.getTimestamp());
+        }
+        activeTasks.remove(result.getMetaInfo());
+        if (!result.getPosts().isEmpty()) {
+            fireEvent(new ParseTaskEvent(this, UPDATES_FOUND, result));
+        }
+    }
+
+    void fireErrorEvent(Throwable e) {
+        ParseError error = new ParseError(e.getLocalizedMessage(), e.getClass().getName(), getStacktrace(e));
+        fireEvent(new ParseTaskEvent(this, ERROR, error));
+    }
+
+    public void printActiveTasks() {
+        System.out.println(activeTasks);
     }
 
     private void fireEvent(ParseTaskEvent event) {
@@ -113,17 +170,8 @@ public class ParseTaskService {
     private List<ParseTask> createTaskList(boolean isScheduled) {
         final AppProps appProps = settings.getAppProps();
         return settings.getSiteConfigs().stream()
-                .map(sc -> new ParseTask(sc, appProps,
-                        getLastTimestamp(sc.getName(), appProps.getScanDaysOnStart()), isScheduled))
+                .map(sc -> new ParseTask(sc, appProps, unmodifiableMap(timeouts), isScheduled))
                 .collect(Collectors.toList());
     }
 
-    private long getLastTimestamp(String name, int scanDaysOnStart) {
-        Long last = timeouts.get(name);
-        if (last != null && last > 0) {
-            return last;
-        } else {
-            return System.currentTimeMillis() - TimeUnit.DAYS.toMillis(scanDaysOnStart);
-        }
-    }
 }

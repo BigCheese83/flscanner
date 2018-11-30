@@ -10,6 +10,7 @@ import java.util.Set;
 /**
  * Created by BigCheese on 28.06.16.
  */
+@Deprecated
 public class CheckBoxIgnoreItemListener implements ItemListener {
 
     private final JLabel label;

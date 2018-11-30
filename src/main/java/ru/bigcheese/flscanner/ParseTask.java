@@ -17,6 +17,7 @@ import java.util.*;
 /**
  * Created by BigCheese on 20.06.16.
  */
+@Deprecated
 public class ParseTask implements Runnable {
 
     private final SiteConfigOld config;

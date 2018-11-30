@@ -1,6 +1,9 @@
 package ru.bigcheese.flscanner.ui;
 
+import dorkbox.util.Desktop;
 import net.miginfocom.swing.MigLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,6 +14,7 @@ import static java.awt.Cursor.HAND_CURSOR;
 
 public class AboutDialog extends JDialog {
 
+    private static final Logger log = LoggerFactory.getLogger(AboutDialog.class);
     private static final String GITHUB_LINK = "https://github.com/BigCheese83";
 
     public AboutDialog() {
@@ -27,9 +31,9 @@ public class AboutDialog extends JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
-                    Desktop.getDesktop().browse(new URI(GITHUB_LINK));
+                    Desktop.browseURL(new URI(GITHUB_LINK));
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.error(ex.getMessage(), ex);
                 }
             }
         });

@@ -7,6 +7,7 @@ package ru.bigcheese.flscanner.config;
  *
  * @author  BigCheese
  */
+@Deprecated
 public class Selector {
 
     private final String rows;

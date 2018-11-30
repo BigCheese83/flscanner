@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
  * @see     java.lang.ThreadLocal
  * @author  BigCheese
  */
+@Deprecated
 public class SafeSimpleDateFormat extends ThreadLocal<SimpleDateFormat> {
 
     private final String pattern;

@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by BigCheese on 03.06.16.
  */
+@Deprecated
 public class SettingsOld {
 
     public static final Map<String, List<Post>> ALL_POSTS = new ConcurrentHashMap<>();

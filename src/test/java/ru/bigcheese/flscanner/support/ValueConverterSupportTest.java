@@ -14,9 +14,12 @@ public class ValueConverterSupportTest {
     @Test
     public void testProgrammersforumTimeConverter() {
         TimeConverter converter = getConverter(PROGRAMMERSFORUM_RU);
-        assertEquals(getTimestamp(1, 56), converter.getTimestamp("Сегодня 01:56"));
-        assertEquals(getTimestamp(14, 0) - TimeUnit.DAYS.toMillis(1), converter.getTimestamp("Вчера 14:00"));
-        assertEquals(getTimestamp(2018, 8, 10, 1, 42), converter.getTimestamp("10.08.2018 01:42"));
+        assertEquals(getTimestamp(1, 56),
+                converter.getTimestamp("Сегодня 01:56"));
+        assertEquals(getTimestamp(14, 0) - TimeUnit.DAYS.toMillis(1),
+                converter.getTimestamp("Вчера 14:00"));
+        assertEquals(getTimestamp(2018, 8, 10, 1, 42),
+                converter.getTimestamp("10.08.2018 01:42"));
     }
 
     private long getTimestamp(int hour, int minute) {
@@ -29,7 +32,7 @@ public class ValueConverterSupportTest {
             c.set(Calendar.YEAR, year);
         }
         if (month != null) {
-            c.set(Calendar.MONTH, month-1);
+            c.set(Calendar.MONTH, month - 1);
         }
         if (day != null) {
             c.set(Calendar.DAY_OF_MONTH, day);

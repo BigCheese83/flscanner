@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
  * @see     ru.bigcheese.flscanner.support.DateParser
  * @author  BigCheese
  */
+@Deprecated
 public class DateParserHelper {
 
     /**

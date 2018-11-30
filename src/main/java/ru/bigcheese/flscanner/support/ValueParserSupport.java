@@ -25,7 +25,7 @@ public class ValueParserSupport {
 
     static {
         descriptionMap.put(ATTRIBUTE_TITLE,
-                element -> (element != null ) ? element.attr("title").trim() : "");
+                element -> (element != null) ? element.attr("title").trim() : "");
 
         timeMap.put(SPAN_TIME_PARENT,
                 element -> {
